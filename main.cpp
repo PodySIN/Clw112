@@ -40,21 +40,6 @@ namespace top {
   void print_canvas(const char * cnv, Frame_t fr);
 }
 
-top::Dot::Dot(int x, int y):
-  IDraw(),
-  o{x, y}
-{}
-
-top::p_t top::Dot::begin() const
-{
-  return o;
-}
-
-top::p_t top::Dot::next(p_t) const
-{
-  return begin();
-}
-
 int main()
 {
   using namespace top;
@@ -81,4 +66,19 @@ int main()
     delete[] cnv;
     return err;
   }
+}
+
+top::Dot::Dot(int x, int y):
+  IDraw(),
+  o{x, y}
+{}
+
+top::p_t top::Dot::begin() const
+{
+  return o;
+}
+
+top::p_t top::Dot::next(p_t) const
+{
+  return begin();
 }

@@ -4,11 +4,20 @@ namespace top {
   struct p_t {
     int x, y;
   };
-
+  struct f_t {
+    p_t aa;
+    p_t bb;
+  };
   struct IDraw {
     virtual p_t begin() const = 0;
     virtual p_t next(p_t) const = 0;
     virtual ~IDraw() = default;
+  };
+  struct Dot: IDraw {
+    p_t begin() const override;
+    p_t next(p_t) const override;
+    p_t o;
+    Dot(int x, int y);
   };
 
   bool operator==(p_t a, p_t b)
@@ -21,21 +30,9 @@ namespace top {
     return !(a == b);
   }
 
-  struct Dot: IDraw {
-    p_t begin() const override;
-    p_t next(p_t) const override;
-    p_t o;
-    Dot(int x, int y);
-  };
-
-  struct f_t {
-    p_t aa;
-    p_t bb;
-  };
   size_t rows(f_t fr);
   size_t cols(f_t fr);
   void extend(p_t** pts, size_t s, p_t p);
-  void make_f(IDraw ** b, size_t k);
   size_t points(const IDraw& d, p_t ** pts, size_t  s);
   f_t frame(const p_t * ps, size_t s);
   char * canvas(f_t f, char fill);
@@ -67,7 +64,6 @@ int main()
     }
     flush(std::cout, cnv, fr);
     delete[] cnv;
-    
   } catch (...) {
     err = 2;
     std::cerr << "Dab drawing\n";
@@ -83,10 +79,12 @@ size_t top::rows(f_t fr)
 {
   return (fr.bb.y - fr.aa.y + 1);
 }
+
 size_t top::cols(f_t fr)
 {
   return (fr.bb.x - fr.aa.x + 1);
 }
+
 top::Dot::Dot(int x, int y):
   IDraw(),
   o{x, y}
@@ -104,7 +102,6 @@ top::p_t top::Dot::next(p_t) const
 
 void top::extend(p_t** pts, size_t s, p_t p) 
 {
-
   p_t *res = new p_t[s+1];
   for(size_t i = 0; i < s; i++) {
     res[i] = (*pts)[i];

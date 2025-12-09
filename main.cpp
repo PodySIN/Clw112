@@ -16,30 +16,44 @@ namespace top {
   struct Dot: IDraw {
     p_t begin() const override;
     p_t next(p_t) const override;
-    p_t o;
+    p_t p0_;
     Dot(int x, int y);
   };
   struct HSeg: IDraw {
     p_t begin() const override;
     p_t next(p_t) const override;
-    p_t a;
+    p_t p0_;
     int length;
     HSeg(p_t a, int l);
   };
   struct VSeg: IDraw {
     p_t begin() const override;
     p_t next(p_t) const override;
-    p_t a;
+    p_t p0_;
     int length;
     VSeg(p_t a, int l);
   };
-
   struct DSeg: IDraw {
     p_t begin() const override;
     p_t next(p_t) const override;
-    p_t a;
+    p_t p0_;
     int length;
     DSeg(p_t a, int l);
+  };
+  struct Square: IDraw {
+    p_t begin() const override;
+    p_t next(p_t) const override;
+    p_t p0_;
+    int length;
+    Square(p_t a, int length);
+  };
+  struct Rectangle: IDraw {
+    p_t begin() const override;
+    p_t next(p_t) const override;
+    p_t p0_;
+    int lengtha;
+    int lengthb;
+    Rectangle(p_t a, int lengtha, int lengthb);
   };
 
   bool operator==(p_t a, p_t b)
@@ -72,18 +86,24 @@ int main()
   using top::HSeg;
   using top::VSeg;
   using top::DSeg;
+  using top::Square;
+  using top::Rectangle;
   int err = 0;
   p_t * pts = nullptr;
   size_t s = 0;
-  size_t sc = 6;
-  IDraw * shps[6] = {};
+  size_t sc = 10;
+  IDraw * shps[sc] = {};
   try {
     shps[0] = new Dot(0, 0);
     shps[1] = new Dot(5, 7);
     shps[2] = new Dot(-5, -2);
     shps[3] = new HSeg(p_t{3, 3}, 5);
-    shps[4] = new VSeg(p_t{8, 2}, 5);
+    shps[4] = new VSeg(p_t{8, 8}, 5);
     shps[5] = new DSeg(p_t{-8, -7}, 4);
+    shps[6] = new Square(p_t{16, -16}, 6);
+    shps[7] = new Rectangle(p_t{-16, -16}, 8, 5);
+    shps[8] = new Dot(-30, -30);
+    shps[9] = new Dot(30, -30);
     for (size_t i = 0; i < sc; i++) {
       points(*(shps[i]), &pts, s);
     }
@@ -122,12 +142,12 @@ size_t top::cols(f_t fr)
 
 top::Dot::Dot(int x, int y):
   IDraw(),
-  o{x, y}
+  p0_{x, y}
 {}
 
 top::p_t top::Dot::begin() const
 {
-  return o;
+  return p0_;
 }
 
 top::p_t top::Dot::next(p_t) const
@@ -135,9 +155,9 @@ top::p_t top::Dot::next(p_t) const
   return begin();
 }
 
-top::HSeg::HSeg(p_t aa, int l):
+top::HSeg::HSeg(p_t p0, int l):
   IDraw(),
-  a(aa),
+  p0_(p0),
   length(l)
 {
   if (length == 0) {
@@ -145,26 +165,26 @@ top::HSeg::HSeg(p_t aa, int l):
   }
   if (length < 0) {
     length *= -1;
-    a.x -= length;
+    p0_.x -= length;
   }
 }
 
 top::p_t top::HSeg::begin() const
 {
-  return a;
+  return p0_;
 }
 
 top::p_t top::HSeg::next(p_t p) const
 {
-  if (p.x == a.x + length - 1) {
-    return a;
+  if (p.x == p0_.x + length - 1) {
+    return p0_;
   }
   return {p.x + 1, p.y};
 }
 
-top::VSeg::VSeg(p_t aa, int l):
+top::VSeg::VSeg(p_t p0, int l):
   IDraw(),
-  a(aa),
+  p0_(p0),
   length(l)
 {
   if (length == 0) {
@@ -172,26 +192,26 @@ top::VSeg::VSeg(p_t aa, int l):
   }
   if (length < 0) {
     length *= -1;
-    a.y -= length;
+    p0_.y -= length;
   }
 }
 
 top::p_t top::VSeg::begin() const
 {
-  return a;
+  return p0_;
 }
 
 top::p_t top::VSeg::next(p_t p) const
 {
-  if (p.y == a.y + length - 1) {
-    return a;
+  if (p.y == p0_.y + length - 1) {
+    return p0_;
   }
   return {p.x, p.y + 1};
 }
 
-top::DSeg::DSeg(p_t aa, int l):
+top::DSeg::DSeg(p_t p0, int l):
   IDraw(),
-  a(aa),
+  p0_(p0),
   length(l)
 {
   if (length == 0) {
@@ -199,22 +219,95 @@ top::DSeg::DSeg(p_t aa, int l):
   }
   if (length < 0) {
     length *= -1;
-    a.y -= length;
-    a.x -= length;
+    p0_.y -= length;
+    p0_.x -= length;
   }
 }
 
 top::p_t top::DSeg::begin() const
 {
-  return a;
+  return p0_;
 }
 
 top::p_t top::DSeg::next(p_t p) const
 {
-  if ((p.y == a.y + length - 1) && (p.x == a.x + length - 1)) {
-    return a;
+  if ((p.y == p0_.y + length - 1) && (p.x == p0_.x + length - 1)) {
+    return p0_;
   }
   return {p.x + 1, p.y + 1};
+}
+
+top::Square::Square(p_t p0, int l):
+  IDraw(),
+  p0_(p0),
+  length(l)
+{
+  if (length == 0) {
+    throw std::invalid_argument("It`s a dot, not a square...");
+  }
+  if (length < 0) {
+    length *= -1;
+    p0_.x -= length;
+  }
+}
+
+top::p_t top::Square::begin() const
+{
+  return p0_;
+}
+
+top::p_t top::Square::next(p_t p) const
+{
+  if (p.x < p0_.x + length - 1 && p.y == p0_.y) {
+    return {p.x + 1, p.y};
+  } else if (p.y < p0_.y + length - 1 && p.x == p0_.x + length - 1) {
+    return {p.x, p.y + 1};
+  } else if (p.x > p0_.x && p.y == p0_.y + length - 1) {
+    return {p.x - 1, p.y};
+  } else if (p.y > p0_.y && p.x == p0_.x) {
+    return {p.x, p.y - 1};
+  }
+  return p0_;
+}
+
+top::Rectangle::Rectangle(p_t p0, int lengtha, int lengthb):
+  IDraw(),
+  p0_(p0),
+  lengtha(lengtha),
+  lengthb(lengthb)
+{
+  if (lengtha == 0 && lengthb == 0) {
+    throw std::invalid_argument("It`s a dot, not a rectangle...");
+  } else if (lengtha == 0 || lengthb == 0) {
+    throw std::invalid_argument("It`s a seg, not a rectangle...");
+  }
+  if (lengtha < 0) {
+    lengtha *= -1;
+    p0_.x -= lengtha;
+  }
+  if (lengthb < 0) {
+    lengthb *= -1;
+    p0_.y -= lengthb;
+  }
+}
+
+top::p_t top::Rectangle::begin() const
+{
+  return p0_;
+}
+
+top::p_t top::Rectangle::next(p_t p) const
+{
+  if (p.x < p0_.x + lengtha - 1 && p.y == p0_.y) {
+    return {p.x + 1, p.y};
+  } else if (p.y < p0_.y + lengthb - 1 && p.x == p0_.x + lengtha - 1) {
+    return {p.x, p.y + 1};
+  } else if (p.x > p0_.x && p.y == p0_.y + lengthb - 1) {
+    return {p.x - 1, p.y};
+  } else if (p.y > p0_.y && p.x == p0_.x) {
+    return {p.x, p.y - 1};
+  }
+  return p0_;
 }
 
 void top::extend(p_t** pts, size_t s, p_t p) 
@@ -235,6 +328,7 @@ void top::points(const IDraw& d, p_t ** pts, size_t & s)
   size_t delta = 1;
   while (d.next(p) != d.begin()) {
     p = d.next(p);
+    std::cout << p.x << " " << p.y << "\n";
     extend(pts, s + delta, p);
     delta++;
   }

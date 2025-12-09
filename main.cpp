@@ -19,6 +19,28 @@ namespace top {
     p_t o;
     Dot(int x, int y);
   };
+  struct HSeg: IDraw {
+    p_t begin() const override;
+    p_t next(p_t) const override;
+    p_t a;
+    int length;
+    HSeg(p_t a, int l);
+  };
+  struct VSeg: IDraw {
+    p_t begin() const override;
+    p_t next(p_t) const override;
+    p_t a;
+    int length;
+    VSeg(p_t a, int l);
+  };
+
+  struct DSeg: IDraw {
+    p_t begin() const override;
+    p_t next(p_t) const override;
+    p_t a;
+    int length;
+    DSeg(p_t a, int l);
+  };
 
   bool operator==(p_t a, p_t b)
   {
@@ -29,11 +51,12 @@ namespace top {
   {
     return !(a == b);
   }
-
+  
+  void delete_shapes(IDraw ** shps, size_t s);
   size_t rows(f_t fr);
   size_t cols(f_t fr);
   void extend(p_t** pts, size_t s, p_t p);
-  size_t points(const IDraw& d, p_t ** pts, size_t  s);
+  void points(const IDraw& d, p_t ** pts, size_t & s);
   f_t frame(const p_t * ps, size_t s);
   char * canvas(f_t f, char fill);
   void paint(char * cnv, f_t fr, p_t p, char fill);
@@ -46,16 +69,23 @@ int main()
   using top::Dot;
   using top::f_t;
   using top::p_t;
-  int err = 1;
-  IDraw* shps[3] = {};
+  using top::HSeg;
+  using top::VSeg;
+  using top::DSeg;
+  int err = 0;
   p_t * pts = nullptr;
   size_t s = 0;
+  size_t sc = 6;
+  IDraw * shps[6] = {};
   try {
     shps[0] = new Dot(0, 0);
     shps[1] = new Dot(5, 7);
     shps[2] = new Dot(-5, -2);
-    for (size_t i = 0; i < 3; i++) {
-      s+= points(*(shps[i]), &pts, s);
+    shps[3] = new HSeg(p_t{3, 3}, 5);
+    shps[4] = new VSeg(p_t{8, 2}, 5);
+    shps[5] = new DSeg(p_t{-8, -7}, 4);
+    for (size_t i = 0; i < sc; i++) {
+      points(*(shps[i]), &pts, s);
     }
     f_t fr = frame(pts, s);
     char * cnv = canvas(fr, '.');
@@ -69,10 +99,15 @@ int main()
     std::cerr << "Dab drawing\n";
   }
   delete[] pts;
-  delete shps[0];
-  delete shps[1];
-  delete shps[2];
+  delete_shapes(shps, sc);
   return err;
+}
+
+void top::delete_shapes(IDraw ** shps, size_t s)
+{
+  for (size_t i = 0; i < s; i++) {
+    delete shps[i];
+  }
 }
 
 size_t top::rows(f_t fr)
@@ -100,6 +135,88 @@ top::p_t top::Dot::next(p_t) const
   return begin();
 }
 
+top::HSeg::HSeg(p_t aa, int l):
+  IDraw(),
+  a(aa),
+  length(l)
+{
+  if (length == 0) {
+    throw std::invalid_argument("It`s a dot, not a segment...");
+  }
+  if (length < 0) {
+    length *= -1;
+    a.x -= length;
+  }
+}
+
+top::p_t top::HSeg::begin() const
+{
+  return a;
+}
+
+top::p_t top::HSeg::next(p_t p) const
+{
+  if (p.x == a.x + length - 1) {
+    return a;
+  }
+  return {p.x + 1, p.y};
+}
+
+top::VSeg::VSeg(p_t aa, int l):
+  IDraw(),
+  a(aa),
+  length(l)
+{
+  if (length == 0) {
+    throw std::invalid_argument("It`s a dot, not a segment...");
+  }
+  if (length < 0) {
+    length *= -1;
+    a.y -= length;
+  }
+}
+
+top::p_t top::VSeg::begin() const
+{
+  return a;
+}
+
+top::p_t top::VSeg::next(p_t p) const
+{
+  if (p.y == a.y + length - 1) {
+    return a;
+  }
+  return {p.x, p.y + 1};
+}
+
+top::DSeg::DSeg(p_t aa, int l):
+  IDraw(),
+  a(aa),
+  length(l)
+{
+  if (length == 0) {
+    throw std::invalid_argument("It`s a dot, not a segment...");
+  }
+  if (length < 0) {
+    length *= -1;
+    a.y -= length;
+    a.x -= length;
+  }
+}
+
+top::p_t top::DSeg::begin() const
+{
+  return a;
+}
+
+top::p_t top::DSeg::next(p_t p) const
+{
+  if ((p.y == a.y + length - 1) && (p.x == a.x + length - 1)) {
+    return a;
+  }
+  return {p.x + 1, p.y + 1};
+}
+
 void top::extend(p_t** pts, size_t s, p_t p) 
 {
   p_t *res = new p_t[s+1];
@@ -111,7 +228,7 @@ void top::extend(p_t** pts, size_t s, p_t p)
   *pts = res;
 }
 
-size_t top::points(const IDraw& d, p_t ** pts, size_t s)
+void top::points(const IDraw& d, p_t ** pts, size_t & s)
 {
   p_t p = d.begin();
   extend(pts, s, p);
@@ -121,7 +238,7 @@ size_t top::points(const IDraw& d, p_t ** pts, size_t s)
     extend(pts, s + delta, p);
     delta++;
   }
-  return delta;
+  s += delta;
 }
 
 top::f_t top::frame(const p_t* pts, size_t s)
